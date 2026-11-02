@@ -333,7 +333,7 @@ export const IRSpectrum: React.FC<{x: number; y: number; w: number; h: number; p
         </g>
       ))}
       {pts.length ? <path d={pts.join(' ')} fill="none" stroke={C.ink} strokeWidth={3} strokeLinejoin="round" /> : null}
-      {head ? <circle cx={head[0]} cy={head[1]} r={6} fill={C.gold} opacity={draw < 1 ? 1 : 0.4 + 0.3 * Math.sin(t * 3)} /> : null}
+      {head ? <circle cx={head[0]} cy={head[1]} r={6} fill={C.gold} opacity={1 + (0.4 + 0.3 * Math.sin(t * 3) - 1) * Math.max(0, Math.min(1, (draw - 0.9) / 0.1))} /> : null}
     </g>
   );
 };

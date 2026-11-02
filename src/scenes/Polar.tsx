@@ -170,7 +170,7 @@ export const Polar: React.FC = () => {
               plane3(camW, {c: [0, 0, 0.15], u: [0, 1, 0], v: [0, 0, 1], w: 1.1, h: 1.25, opacity: pl}),
               axis3(camW, {a: [0, 0, -1.25], b: [0, 0, 1.55], opacity: ax, t, label: 'C2'}),
               ...molItems3(camW, w0),
-              arrow3(camW, {a: w0.atoms[0].pos, b: muEnd, color: DIP, width: 9, head: 30, opacity: muGrow > 0.01 ? 1 : 0, depth: -60}),
+              arrow3(camW, {a: w0.atoms[0].pos, b: muEnd, color: DIP, width: 9, head: 30, opacity: Math.min(1, muGrow * 12), depth: -60}),
             ]}
           />
           {lbl(camW, w0.atoms[0].pos, -86, 46, 'δ−', C.red, delta)}
@@ -199,7 +199,7 @@ export const Polar: React.FC = () => {
                 plane3(camB, {c: [0, 0, 0], u: [1, 0, 0], v: [0, 1, 0], w: 1.85, h: 1.85, opacity: pl, depth: 1.5}),
                 axis3(camB, {a: [0, 0, -1.4], b: [0, 0, 1.6], opacity: ax, t, label: 'C3'}),
                 ...molItems3(camB, bf3()),
-                arrow3(camB, {a: [0, 0, 0.05], b: [0, 0, 0.05 + muB], color: DIP, width: 8, head: 26, opacity: trial > 0.01 ? 1 : 0, depth: -60}),
+                arrow3(camB, {a: [0, 0, 0.05], b: [0, 0, 0.05 + muB], color: DIP, width: 8, head: 26, opacity: Math.min(1, trial * 12), depth: -60}),
                 arrow3(camB, {a: [0, 0, -0.05], b: [0, 0, -0.05 - muB * refl], color: C.red, width: 6, head: 22, opacity: refl * 0.85, depth: -59}),
               ]}
             />
@@ -284,7 +284,7 @@ export const Polar: React.FC = () => {
             const items = [
               ...molItems3(camD, w0),
               ...moments(w0).map(([a, b]) => bondMoment(camD, {from: a, to: b, offset: 34, trim: 0.15, opacity: 0.9})),
-              arrow3(camD, {a: w0.atoms[0].pos, b: [0, 0, w0.atoms[0].pos[2] + mu[2] * 3 * resP], color: DIP, width: 9, head: 30, opacity: resP > 0.01 ? 1 : 0, depth: -60}),
+              arrow3(camD, {a: w0.atoms[0].pos, b: [0, 0, w0.atoms[0].pos[2] + mu[2] * 3 * resP], color: DIP, width: 9, head: 30, opacity: Math.min(1, resP * 12), depth: -60}),
             ];
             return <Render3D items={items} />;
           })()}

@@ -206,8 +206,8 @@ export const CharTable: React.FC = () => {
         <SyText x={oP.X + 150} y={oP.Y - 150} parts={[['p'], ['x', 'sub']]} size={40} color={C.gold} font="serif" italic opacity={pxOn * waterOut} anchor="start" />
         {/* operasi yang sedang diterapkan + karakternya */}
         {[0, 1, 2, 3].map((k) => {
-          const w = opWin(k) * waterOut;
-          if (w <= 0.01 || Math.max(pzOn, pxOn) < 0.05) return null;
+          const w = opWin(k) * waterOut * Math.min(1, Math.max(pzOn, pxOn) * 4);
+          if (w <= 0.01) return null;
           const done = ramp(t, S.en[k] - 0.1, S.en[k] + 0.2);
           const v = curCh[k];
           return (
