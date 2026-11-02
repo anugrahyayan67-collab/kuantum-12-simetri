@@ -2,9 +2,9 @@ import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {EASE_IN_OUT, mix, rand, ramp} from '../anim';
 import {Glow, Stage} from '../components/primitives';
-import {VbDefs} from '../components/vbA';
-import {SpinUD} from '../components/grupA';
-import {MoADefs} from '../components/moA';
+import {VbDefs as VbADefs} from '../components/vbA';
+import {Render3D, VbDefs, type Cam} from '../components/vbC';
+import {BENZENE, H2O, NH3, axis3D, plane3D, rotArrow3D, symMol} from '../components/syA';
 import {useScene} from '../SceneContext';
 import {C, FONT} from '../theme';
 
@@ -21,160 +21,75 @@ const Letters: React.FC<{text: string; t: number; start: number; step: number; s
   </div>
 );
 
-// Rumus & simbol ikatan yang melayang samar di latar.
-const sub = (s: number, v: string, col?: string) => (
+// Simbol simetri yang melayang samar di latar.
+const sb = (s: number, v: string, col?: string) => (
   <tspan fontSize={s * 0.6} baselineShift="sub" fill={col}>
     {v}
   </tspan>
 );
 const FLOATS: ((s: number) => React.ReactNode)[] = [
-  () => <tspan fill={C.gold}>α</tspan>,
-  () => <tspan fill={C.cyan}>β</tspan>,
-  () => (
+  (s) => (
     <>
-      <tspan fill={C.cyan}>α + 2β</tspan>
+      <tspan fill={C.gold}>C</tspan>
+      {sb(s, '2v', C.gold)}
     </>
   ),
   (s) => (
     <>
-      <tspan fill={C.ink}>CH</tspan>
-      {sub(s, '4')}
+      <tspan fill={C.cyan}>D</tspan>
+      {sb(s, '6h', C.cyan)}
     </>
   ),
   (s) => (
     <>
-      <tspan fill={C.ink}>BeH</tspan>
-      {sub(s, '2')}
+      <tspan fill={C.ink}>T</tspan>
+      {sb(s, 'd', C.ink)}
     </>
   ),
-  () => <tspan fill={C.amber}>π</tspan>,
+  () => <tspan fill={C.cyan}>σ</tspan>,
+  () => <tspan fill={C.pink}>i</tspan>,
   (s) => (
     <>
-      <tspan fill={C.violet}>ψ = Σ c</tspan>
-      {sub(s, 'i', C.violet)}
-      <tspan fill={C.violet}>φ</tspan>
-      {sub(s, 'i', C.violet)}
-    </>
-  ),
-  () => <tspan fill={C.gold}>4n + 2</tspan>,
-  (s) => (
-    <>
-      <tspan fill={C.ink}>H</tspan>
-      {sub(s, '2')}
-      <tspan fill={C.ink}>O</tspan>
+      <tspan fill={C.violet}>S</tspan>
+      {sb(s, '4', C.violet)}
     </>
   ),
   (s) => (
     <>
-      <tspan fill={C.cyan}>t</tspan>
-      {sub(s, '2', C.cyan)}
+      <tspan fill={C.gold}>C</tspan>
+      {sb(s, '3', C.gold)}
     </>
   ),
-  () => <tspan fill={C.red}>α − β</tspan>,
-  () => <tspan fill={C.mint}>LUMO</tspan>,
+  (s) => (
+    <>
+      <tspan fill={C.cyan}>σ</tspan>
+      {sb(s, 'h', C.cyan)}
+    </>
+  ),
+  () => <tspan fill={C.ink}>E</tspan>,
+  (s) => (
+    <>
+      <tspan fill={C.mint}>O</tspan>
+      {sb(s, 'h', C.mint)}
+    </>
+  ),
+  (s) => (
+    <>
+      <tspan fill={C.gold}>C</tspan>
+      {sb(s, '3v', C.gold)}
+    </>
+  ),
+  (s) => (
+    <>
+      <tspan fill={C.violet}>S</tspan>
+      {sb(s, '6', C.violet)}
+    </>
+  ),
 ];
 
-// Lingkaran Frost samar (benzena): heksagon di dalam lingkaran, tingkat energi di setiap sudut.
-const FrostGhost: React.FC<{x: number; y: number; r: number; t: number; p: number}> = ({x, y, r, t, p}) => {
-  const vs = Array.from({length: 6}, (_, k) => {
-    const a = Math.PI / 2 + (k * Math.PI) / 3; // sudut terbawah = α + 2β
-    return [x + r * Math.cos(a), y + r * Math.sin(a)] as [number, number];
-  });
-  return (
-    <g opacity={p}>
-      <circle cx={x} cy={y} r={r} fill="none" stroke={C.muted} strokeWidth={2} strokeDasharray="6 8" strokeDashoffset={-t * 10} />
-      <path d={`M${vs.map((v) => v.join(',')).join(' L')} Z`} fill="none" stroke={C.ink} strokeOpacity={0.5} strokeWidth={3} />
-      {vs.map(([vx, vy], k) => {
-        const bond = vy > y + 1;
-        const col = bond ? C.cyan : C.red;
-        return (
-          <g key={k}>
-            <line x1={vx - 40} y1={vy} x2={vx + 40} y2={vy} stroke={col} strokeWidth={5} strokeLinecap="round" />
-            {bond ? [-1, 1].map((s) => <SpinUD key={s} x={vx + s * 11} y={vy - 2 + 3 * Math.sin(t * 2.2 + k + s)} up={s < 0} len={34} width={3.5} />) : null}
-          </g>
-        );
-      })}
-      <line x1={x - r - 40} y1={y} x2={x + r + 40} y2={y} stroke={C.muted} strokeWidth={2} strokeDasharray="4 8" />
-      <text x={x - r - 52} y={y} textAnchor="end" dominantBaseline="central" fontFamily={FONT.serif} fontStyle="italic" fontSize={34} fill={C.gold}>
-        α
-      </text>
-    </g>
-  );
-};
-
-// Diagram MO metana samar: C (2s, 2p) kiri, kelompok 4 H kanan, a₁/t₂ ikatan & antiikatan di tengah.
-const MethaneGhost: React.FC<{x: number; y: number; t: number; p: number}> = ({x, y, t, p}) => {
-  const L = [
-    {y: -190, n: 1, col: C.red},
-    {y: -120, n: 3, col: C.red},
-    {y: 110, n: 3, col: C.cyan},
-    {y: 190, n: 1, col: C.cyan},
-  ];
-  const lw = 44;
-  return (
-    <g opacity={p}>
-      {[
-        [x - 190, y - 10, 1],
-        [x - 190, y - 70, 3],
-        [x + 190, y + 20, 4],
-      ].map(([ax, ay, n], k) => (
-        <g key={k}>
-          {Array.from({length: n}, (_, j) => (
-            <line key={j} x1={ax - (n * 34) / 2 + j * 34 + 4} y1={ay} x2={ax - (n * 34) / 2 + j * 34 + 30} y2={ay} stroke={C.blue} strokeWidth={4} strokeLinecap="round" />
-          ))}
-          {L.map((l, i) => (
-            <line
-              key={i}
-              x1={ax + (k < 2 ? 1 : -1) * ((n * 34) / 2)}
-              y1={ay}
-              x2={x + (k < 2 ? -1 : 1) * ((l.n * (lw + 10)) / 2)}
-              y2={y + l.y}
-              stroke={C.muted}
-              strokeWidth={1.6}
-              strokeDasharray="6 8"
-              strokeDashoffset={-t * 10}
-              opacity={(k === 0 && l.n === 3) || (k === 1 && l.n === 1) ? 0 : 0.6}
-            />
-          ))}
-        </g>
-      ))}
-      {L.map((l, i) => (
-        <g key={i}>
-          {Array.from({length: l.n}, (_, j) => {
-            const cx = x - ((l.n - 1) * (lw + 10)) / 2 + j * (lw + 10);
-            return (
-              <g key={j}>
-                <line x1={cx - lw / 2} y1={y + l.y} x2={cx + lw / 2} y2={y + l.y} stroke={l.col} strokeWidth={5} strokeLinecap="round" />
-                {l.col === C.cyan
-                  ? [-1, 1].map((s) => <SpinUD key={s} x={cx + s * 9} y={y + l.y - 2 + 2.5 * Math.sin(t * 2.4 + i + j + s)} up={s < 0} len={30} width={3} />)
-                  : null}
-              </g>
-            );
-          })}
-        </g>
-      ))}
-    </g>
-  );
-};
-
-// Awan π benzena: cincin titik yang beredar di atas heksagon.
-const PiRing: React.FC<{x: number; y: number; r: number; t: number; p: number}> = ({x, y, r, t, p}) => (
-  <g opacity={p}>
-    <ellipse cx={x} cy={y} rx={r * 1.35} ry={r * 1.05} fill="url(#soft-cyan)" opacity={0.18} />
-    {Array.from({length: 90}, (_, i) => {
-      const a = rand(i * 2.7) * Math.PI * 2 + t * (0.25 + 0.15 * rand(i));
-      const rr = r * (0.8 + 0.45 * rand(i * 4.1)) * (1 + 0.03 * Math.sin(t * 1.5));
-      return <circle key={i} cx={x + rr * Math.cos(a)} cy={y + rr * 0.78 * Math.sin(a)} r={1.6 + 2 * rand(i * 6.3)} fill={C.cyan} opacity={0.25 + 0.25 * Math.sin(t * 2 + i)} />;
-    })}
-    {Array.from({length: 6}, (_, k) => {
-      const a = Math.PI / 6 + (k * Math.PI) / 3 + t * 0.05;
-      const b = a + Math.PI / 3;
-      return (
-        <line key={k} x1={x + r * 0.62 * Math.cos(a)} y1={y + r * 0.62 * 0.78 * Math.sin(a)} x2={x + r * 0.62 * Math.cos(b)} y2={y + r * 0.62 * 0.78 * Math.sin(b)} stroke={C.ink} strokeOpacity={0.35} strokeWidth={4} />
-      );
-    })}
-  </g>
-);
+const NH3M = NH3();
+const H2OM = H2O();
+const BZ = BENZENE(1.39, 2.47, false);
 
 export const Title: React.FC = () => {
   const {t} = useScene();
@@ -183,16 +98,34 @@ export const Title: React.FC = () => {
   const line = ramp(t, 1.8, 3.2, EASE_IN_OUT);
   const meet = ramp(t, 0.2, 4.0, EASE_IN_OUT);
   const flashP = ramp(t, 3.6, 5.2);
+  // NH₃ kiri: putaran C₃ bertahap berulang (120° tiap 2,4 dtk), sumbu emas + panah putar
+  const step = Math.max(0, t) / 2.4;
+  const k3 = Math.floor(step);
+  const f3 = EASE_IN_OUT(Math.min(1, (step - k3) / 0.55));
+  const camL: Cam = {cx: 250, cy: 540, s: 130, yaw: 0.5, pitch: -0.42};
+  const leftItems = [
+    ...axis3D(camL, {dir: [0, 0, 1], len: 1.75, center: [0, 0, 0.1], width: 4, glow: 0.6}),
+    ...rotArrow3D(camL, {at: [0, 0, 1.2], dir: [0, 0, 1], r: 0.5, from: -0.6 + (k3 + f3) * 2.094, sweep: 4.4, width: 3.5}),
+    ...symMol(camL, NH3M, {op: {kind: 'C', axis: [0, 0, 1], deg: 120 * (k3 + f3)}, p: 1, labels: false}),
+  ];
+  // H₂O kanan: bidang cermin sian (yz) dan molekul yang berputar pelan
+  const camR: Cam = {cx: 1680, cy: 540, s: 140, yaw: 0.65 + 0.35 * Math.sin(t * 0.5), pitch: -0.3};
+  const rightItems = [
+    ...plane3D(camR, {u: [0, 1, 0], v: [0, 0, 1], w: 1.2, h: 1.25, center: [0, 0, -0.15], p: ramp(t, 0.4, 2.2, EASE_IN_OUT)}),
+    ...symMol(camR, H2OM, {labels: false}),
+  ];
+  // benzena besar samar di belakang judul (D₆h)
+  const camC: Cam = {cx: 960, cy: 470, s: mix(70, 92, meet), yaw: t * 0.12, pitch: -1.05};
+  const centerItems = [...axis3D(camC, {dir: [0, 0, 1], len: 3.0, width: 3}), ...symMol(camC, BZ, {labels: false, hR: 0.24})];
   return (
     <AbsoluteFill>
       <Stage>
         <VbDefs />
+        <VbADefs />
         <Glow x={960} y={470} r={640} color="gold" opacity={0.12 * bg} />
-        <MoADefs />
-        <FrostGhost x={330} y={500} r={170} t={t} p={0.3 * bg * (0.85 + 0.15 * Math.sin(t * 0.9))} />
-        <MethaneGhost x={1590} y={500} t={t} p={0.28 * bg} />
-        {/* awan π yang beredar di belakang judul */}
-        <PiRing x={960} y={470} r={mix(150, 250, meet)} t={t} p={0.9 * ramp(t, 0.6, 4.6, EASE_IN_OUT)} />
+        <Render3D items={centerItems} opacity={0.2 * ramp(t, 0.6, 4.6, EASE_IN_OUT)} />
+        <Render3D items={leftItems} opacity={0.42 * bg * (0.85 + 0.15 * Math.sin(t * 0.9))} />
+        <Render3D items={rightItems} opacity={0.4 * bg} />
         <circle cx={960} cy={470} r={420 * flashP + 80} fill="url(#vbA-flash)" opacity={0.35 * Math.max(0, 1 - Math.abs(t - 4.0) / 1.2) * bg} />
         {FLOATS.map((f, i) => {
           const x = 140 + ((rand(i * 3.3) * 1640 + t * (14 + rand(i) * 18)) % 1640);
@@ -200,7 +133,7 @@ export const Title: React.FC = () => {
           const edge = Math.min(1, (x - 140) / 120, (1780 - x) / 120);
           const s = 40 + rand(i * 7.7) * 26;
           return (
-            <text key={i} x={x} y={y} fontFamily={FONT.serif} fontSize={s} fill={C.ink} opacity={0.16 * bg * Math.max(0, edge)} textAnchor="middle">
+            <text key={i} x={x} y={y} fontFamily={FONT.serif} fontStyle="italic" fontSize={s} fill={C.ink} opacity={0.2 * bg * Math.max(0, edge)} textAnchor="middle">
               {f(s)}
             </text>
           );
