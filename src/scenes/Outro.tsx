@@ -2,10 +2,21 @@ import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {EASE_IN_OUT, cyc, rand, ramp} from '../anim';
 import {Glow, Stage} from '../components/primitives';
-import {HexIcon, POrb, Spin} from '../components/vbD';
-import {Render3D, VbDefs, methane} from '../components/vbC';
+import {type Cam, Render3D, VbDefs} from '../components/vbC';
+import {PGBadge, axis3, bf3, molItems3, plane3, water} from '../components/syD';
 import {useScene} from '../SceneContext';
 import {C, FONT} from '../theme';
+
+const PGS: [string, string][] = [
+  ['C', '2v'],
+  ['D', '3h'],
+  ['T', 'd'],
+  ['O', 'h'],
+  ['C', '3v'],
+  ['D', '6h'],
+  ['I', 'h'],
+  ['D', '∞h'],
+];
 
 const REFS = [
   'RPS Kimia Kuantum S1 Kimia UNESA — pertemuan 12–13: simetri molekul & grup titik',
@@ -29,83 +40,40 @@ export const Outro: React.FC = () => {
       <Stage>
         <Glow x={960} y={300} r={500} color="violet" opacity={0.15} />
         <VbDefs />
-        {/* hiasan poliatomik: lingkaran Frost benzena, butadiena dengan simpul, CH₄ berputar */}
+        {/* hiasan simetri: H₂O dengan C₂ & σv, BF₃ dengan C₃ & σh, lencana grup titik melayang */}
         <g opacity={waves}>
-          {/* kiri: lingkaran Frost benzena (6 e⁻ di 3 MO ikatan) */}
           {(() => {
-            const x = 200;
-            const y = 255;
-            const R = 80;
-            const ys = [1, 0.5, 0.5, -0.5, -0.5, -1].map((v) => y + R * v);
-            const xs = [0, -0.866, 0.866, -0.866, 0.866, 0].map((v) => x + R * v);
+            const camW: Cam = {cx: 230, cy: 290, s: 112, yaw: 0.3 + 0.6 * Math.sin(t * 0.3), pitch: -0.15, persp: 9};
+            const camB: Cam = {cx: 1680, cy: 290, s: 92, yaw: t * 0.35, pitch: -0.55, persp: 9};
             return (
-              <g>
-                <circle cx={x} cy={y} r={R} fill="none" stroke={C.muted} strokeWidth={2.5} opacity={0.6} />
-                <polygon points={[0, 2, 4, 5, 3, 1].map((k) => `${xs[k]},${ys[k]}`).join(' ')} fill="none" stroke={C.mint} strokeWidth={3} opacity={0.55} />
-                <line x1={x - R - 30} y1={y} x2={x + R + 30} y2={y} stroke={C.muted} strokeWidth={1.5} strokeDasharray="5 6" opacity={0.5} />
-                {xs.map((px, k) => (
-                  <g key={k}>
-                    <line x1={px - 20} y1={ys[k]} x2={px + 20} y2={ys[k]} stroke={k < 3 ? C.cyan : C.red} strokeWidth={14} strokeOpacity={0.12 + 0.08 * Math.sin(t * 2 + k)} strokeLinecap="round" />
-                    <line x1={px - 20} y1={ys[k]} x2={px + 20} y2={ys[k]} stroke={k < 3 ? C.cyan : C.red} strokeWidth={5} strokeLinecap="round" />
-                    {k < 3 ? (
-                      <>
-                        <Spin x={px - 7} y={ys[k] - 16 + 2 * Math.sin(t * 2.4 + k)} up len={24} width={3} />
-                        <Spin x={px + 7} y={ys[k] - 16 - 2 * Math.sin(t * 2.4 + k)} up={false} len={24} width={3} />
-                      </>
-                    ) : null}
-                  </g>
-                ))}
-                <text x={x} y={y + R + 42} textAnchor="middle" fontFamily={FONT.sans} fontSize={24} fill={C.mint}>
-                  4n + 2
-                </text>
-              </g>
+              <>
+                <Glow x={230} y={290} r={220} color="red" opacity={0.12} />
+                <Glow x={1690} y={290} r={220} color="mint" opacity={0.1} />
+                <Render3D
+                  items={[
+                    plane3(camW, {c: [0, 0, 0.15], u: [1, 0, 0], v: [0, 0, 1], w: 1.3, h: 1.2, opacity: 0.8}),
+                    plane3(camW, {c: [0, 0, 0.15], u: [0, 1, 0], v: [0, 0, 1], w: 1.0, h: 1.2, opacity: 0.6}),
+                    axis3(camW, {a: [0, 0, -1.2], b: [0, 0, 1.45], t, label: 'C2'}),
+                    ...molItems3(camW, water(), {labels: false}),
+                  ]}
+                />
+                <Render3D
+                  items={[
+                    plane3(camB, {c: [0, 0, 0], u: [1, 0, 0], v: [0, 1, 0], w: 1.55, h: 1.55, opacity: 0.8, depth: 1.5}),
+                    axis3(camB, {a: [0, 0, -1.3], b: [0, 0, 1.5], t, label: 'C3'}),
+                    ...molItems3(camB, bf3(), {labels: false}),
+                  ]}
+                />
+              </>
             );
           })()}
-          {/* atas tengah: butadiena ψ₂ (satu simpul) */}
-          {(() => {
-            const ph = [1, 1, -1, -1];
-            const bob = 3 * Math.sin(t * 1.4);
-            return (
-              <g transform={`translate(0 ${bob})`}>
-                <line x1={960 - 105} y1={86} x2={960 + 105} y2={86} stroke="#c9d3f2" strokeWidth={4} opacity={0.6} />
-                {ph.map((s, k) => (
-                  <POrb key={k} x={960 - 105 + k * 70} y={86} L={34 * (k === 0 || k === 3 ? 0.8 : 1)} w={13} ang={s > 0 ? 0 : 180} glow={0.5 + 0.5 * Math.sin(t * 2)} />
-                ))}
-                <line x1={960} y1={40} x2={960} y2={132} stroke={C.red} strokeWidth={2.5} strokeDasharray="5 5" opacity={0.6 + 0.3 * Math.sin(t * 2)} />
-              </g>
-            );
-          })()}
-          {/* kanan: CH₄ berputar */}
-          <Render3D items={methane({cx: 1720, cy: 270, s: 78, yaw: t * 0.5, pitch: -0.3 + 0.1 * Math.sin(t * 0.4), persp: 8})} />
-          {Array.from({length: 12}, (_, k) => {
+          {Array.from({length: 10}, (_, k) => {
             const ph = ((t * (0.035 + 0.02 * rand(k)) + rand(k * 3.1)) % 1 + 1) % 1;
             const x = 140 + ph * 1640 + 40 * rand(k * 5.1);
-            const y = 940 + 70 * rand(k * 7.3) + 12 * Math.sin(t * 0.7 + k);
-            const op = 0.3 * cyc(ph);
-            const kind = k % 3;
-            const rot = t * 20 * (rand(k * 2.2) - 0.5);
-            return (
-              <g key={k} opacity={op} transform={`rotate(${rot} ${x} ${y})`}>
-                {kind === 0 ? (
-                  <HexIcon x={x} y={y} r={26} mode="ring" width={3} />
-                ) : kind === 1 ? (
-                  <g>
-                    {[0, 1, 2, 3].map((j) => (
-                      <POrb key={j} x={x - 36 + j * 24} y={y} L={16} w={7} ang={j < 2 ? 0 : 180} />
-                    ))}
-                  </g>
-                ) : (
-                  <g>
-                    {[0, 1, 2].map((j) => {
-                      const a = (j * 2 * Math.PI) / 3 + Math.PI / 2;
-                      return <line key={j} x1={x} y1={y} x2={x + 26 * Math.cos(a)} y2={y + 26 * Math.sin(a)} stroke="#c9d3f2" strokeWidth={4} />;
-                    })}
-                    <line x1={x} y1={y} x2={x} y2={y - 28} stroke="#c9d3f2" strokeWidth={4} />
-                    <circle cx={x} cy={y} r={9} fill="#59627a" />
-                  </g>
-                )}
-              </g>
-            );
+            const y = 740 + 130 * rand(k * 7.3) + 12 * Math.sin(t * 0.7 + k);
+            const op = 0.7 * cyc(ph);
+            const pg = PGS[k % PGS.length];
+            return <PGBadge key={k} x={x} y={y} main={pg[0]} sub={pg[1]} r={34} color={k % 2 ? C.gold : C.cyan} opacity={op} rot={10 * Math.sin(t * 0.5 + k)} />;
           })}
         </g>
       </Stage>
