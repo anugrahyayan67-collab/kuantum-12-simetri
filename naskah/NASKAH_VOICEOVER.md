@@ -1,4 +1,4 @@
-# Naskah Voice-Over — *Orbital Milik Bersama* (Kimia Kuantum: Orbital Molekul Poliatomik & Hückel)
+# Naskah Voice-Over — *Bahasa Simetri* (Kimia Kuantum: Simetri Molekul & Grup Titik)
 
 Durasi total **11:52** (712.2 dtk) · 1263 kata · tempo baca ±5.3 suku kata/detik (±128 kata/menit saat berbicara).
 
